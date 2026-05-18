@@ -10,6 +10,8 @@
 
 CANFD_FD_MSG_T g_sRxMsgFrame;
 CANFD_FD_MSG_T g_sTxMsgFrame;
+uint8_t g_au8CanRxDataBC[32] = {0};
+volatile uint8_t g_u8CanRxDataBCUpdated = 0U;
 
 volatile uint32_t g_u32CanIrqStatus = 0;
 static uint8_t g_u8CanFdModeOpened = 0;
@@ -20,6 +22,40 @@ uint8_t msg_tx_buffer_idx = 0;
 #define CANFD_TX_DATA_MAX_LEN (64U)
 
 /*_____ F U N C T I O N S __________________________________________________*/
+
+static void CAN_ParseRxMessage(CANFD_FD_MSG_T *psRxMsg)
+{
+    if (psRxMsg->eIdType != eCANFD_SID)
+    {
+        return;
+    }
+
+    switch (psRxMsg->u32Id)
+    {
+        case 0xBCU:
+            if (psRxMsg->u32DLC < 8U)
+            {
+                printf("SID 0xBC received, but DLC=%u is shorter than 8 bytes\r\n", psRxMsg->u32DLC);
+                return;
+            }
+
+            g_au8CanRxDataBC[0] = psRxMsg->au8Data[0];
+            g_au8CanRxDataBC[1] = psRxMsg->au8Data[1];
+            g_au8CanRxDataBC[2] = psRxMsg->au8Data[2];
+            g_au8CanRxDataBC[3] = psRxMsg->au8Data[3];
+            g_au8CanRxDataBC[4] = psRxMsg->au8Data[4];
+            g_au8CanRxDataBC[5] = psRxMsg->au8Data[5];
+            g_au8CanRxDataBC[6] = psRxMsg->au8Data[6];
+            g_au8CanRxDataBC[7] = psRxMsg->au8Data[7];
+
+            g_u8CanRxDataBCUpdated = 1U;
+            printf("SID 0xBC parsed into g_au8CanRxDataBC[0..7]\r\n");
+            break;
+
+        default:
+            break;
+    }
+}
 
 static void CAN_DumpBusStatus(void)
 {
@@ -176,6 +212,7 @@ void CAN_Rx_process(void)
             if (u32RxResult != eCANFD_RECEIVE_EMPTY)
             {
                 CAN_PrintRxMessage(0, &g_sRxMsgFrame);
+                CAN_ParseRxMessage(&g_sRxMsgFrame);
             }
         }
         while ((u32RxResult != eCANFD_RECEIVE_EMPTY) && (CAN_RxFifo0FillLevel() != 0U));
@@ -194,6 +231,7 @@ void CAN_Rx_process(void)
             if (u32RxResult != eCANFD_RECEIVE_EMPTY)
             {
                 CAN_PrintRxMessage(1, &g_sRxMsgFrame);
+                CAN_ParseRxMessage(&g_sRxMsgFrame);
             }
         }
         while ((u32RxResult != eCANFD_RECEIVE_EMPTY) && (CAN_RxFifo1FillLevel() != 0U));

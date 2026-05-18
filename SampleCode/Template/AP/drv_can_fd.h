@@ -49,6 +49,8 @@
 /*_____ F U N C T I O N S __________________________________________________*/
 extern CANFD_FD_MSG_T g_sRxMsgFrame;
 extern CANFD_FD_MSG_T g_sTxMsgFrame;
+extern uint8_t g_au8CanRxDataBC[32];
+extern volatile uint8_t g_u8CanRxDataBCUpdated;
 extern volatile uint32_t g_u32CanIrqStatus;
 
 void CAN_Rx_process(void);

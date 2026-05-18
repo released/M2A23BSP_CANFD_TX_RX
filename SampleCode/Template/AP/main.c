@@ -168,26 +168,6 @@ void TimerService_CreateTask(void)
     }
 }
 
-static void CAN_LoadTxMessage1Example(void)
-{
-    uint8_t u8Idx;
-
-    for (u8Idx = 0U; u8Idx < 16U; u8Idx++)
-    {
-        g_sTxMsgFrame.au8Data[u8Idx] = 0x10U + u8Idx;
-    }
-}
-
-static void CAN_LoadTxMessage2Example(void)
-{
-    uint8_t u8Idx;
-
-    for (u8Idx = 0U; u8Idx < 32U; u8Idx++)
-    {
-        g_sTxMsgFrame.au8Data[u8Idx] = 0x20U + u8Idx;
-    }
-}
-
 static void FMC_ISP_Program(uint32_t u32Cmd, uint32_t u32Addr, uint32_t u32Data)
 {
     uint32_t u32TimeOutCnt;
@@ -414,10 +394,23 @@ static void APP_StandbyWaitCanWake(void)
 
 void loop(void)
 {
+    uint8_t u8Idx;
+
     // timer service
     TimerService_Dispatch();
 
     CAN_Rx_process();
+
+    if (g_u8CanRxDataBCUpdated == 1U)
+    {
+        g_u8CanRxDataBCUpdated = 0U;
+        printf("g_au8CanRxDataBC[0..7] : ");
+        for (u8Idx = 0U; u8Idx < 8U; u8Idx++)
+        {
+            printf("0x%02X ", g_au8CanRxDataBC[u8Idx]);
+        }
+        printf("\r\n");
+    }
 
     if (FLAG_PROJ_ERASE_CHECKSUM)
     {
@@ -434,14 +427,28 @@ void loop(void)
     if (FLAG_PROJ_SEND_CAN_1)
     {
         FLAG_PROJ_SEND_CAN_1 = 0;
-        CAN_LoadTxMessage1Example();
-        CAN_SendMessage(TRUE, &g_sTxMsgFrame, eCANFD_SID, 0x333, 16);
+        g_sTxMsgFrame.au8Data[0] = 0x40U;
+        g_sTxMsgFrame.au8Data[1] = 0x20U;
+        g_sTxMsgFrame.au8Data[2] = 0x85U;
+        g_sTxMsgFrame.au8Data[3] = 0x83U;
+        g_sTxMsgFrame.au8Data[4] = 0x85U;
+        g_sTxMsgFrame.au8Data[5] = 0x59U;
+        g_sTxMsgFrame.au8Data[6] = 0x5AU;
+        g_sTxMsgFrame.au8Data[7] = 0xFFU;
+
+        CAN_SendMessage(TRUE, &g_sTxMsgFrame, eCANFD_SID, 0x99, 8);
     }
 
     if (FLAG_PROJ_SEND_CAN_2)
     {
+        uint8_t u8Idx;
+
         FLAG_PROJ_SEND_CAN_2 = 0;
-        CAN_LoadTxMessage2Example();
+        for (u8Idx = 0U; u8Idx < 32U; u8Idx++)
+        {
+            g_sTxMsgFrame.au8Data[u8Idx] = 0x20U + u8Idx;
+        }
+
         CAN_SendMessage(TRUE, &g_sTxMsgFrame, eCANFD_XID, 0x4444, 32);
     }
 }
@@ -621,8 +628,8 @@ int main()
     CAN_Init();
     printf("UART key map:\r\n");
     printf("7: standby until CAN RX wake-up\r\n");
-    printf("8: send CAN message:0x333, 16 bytes\r\n");
-    printf("9: send CAN message:0x444, 32 bytes\r\n");
+    printf("8: send CAN message:0x99, 8 bytes\r\n");
+    printf("9: send CAN message:0x4444, 32 bytes\r\n");
     printf("E/e: invalidate APP checksum + reset\r\n");
     
     TimerService_Init();    
