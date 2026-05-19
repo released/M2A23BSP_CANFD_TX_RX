@@ -88,7 +88,7 @@ Typical APP startup log includes:
 UART control:
 
 - `8`
-  send CAN FD SID `0x333`, `16 bytes`
+  send CAN FD SID `0x99`, `8 bytes`
 - `9`
   send CAN FD XID `0x4444`, `32 bytes`
 
@@ -117,6 +117,10 @@ Result output:
 Image:
 
 ![app_when_receive_CAN_RX](app_when_receive_CAN_RX.jpg)
+
+To filter specific ID : 0xBC
+
+![app_when_receive_CAN_RX](app_when_receive_CAN_RX_2.jpg)
 
 ### Wake-up by CAN
 
