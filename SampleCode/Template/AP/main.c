@@ -379,7 +379,7 @@ static void APP_StandbyWaitCanWake(void)
     g_u32CanIrqStatus = 0U;
     while (g_u32CanIrqStatus == 0U)
     {
-        __WFI();
+        CLK_Idle();
     }
 
     SysTick->CTRL = u32SysTickCtrl;
